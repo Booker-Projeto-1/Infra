@@ -1,0 +1,36 @@
+FROM node:18-alpine
+RUN apk add --no-cache libc6-compat
+WORKDIR /usr/src/app
+COPY /booker-frontend/booker-frontend/package*.json ./
+RUN yarn  install --frozen-lockfile
+
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+
+COPY . .
+
+RUN  yarn build
+
+FROM node:18-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV production
+
+RUN addgroup --system --grid 1001 app
+RUN adduser --system --uid 1001 app
+
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+
+COPY --from=builder --chown=app:app /app/.next ./.next
+COPY --from=builder --chown=app:app /app/next.config.js ./next.config.js
+
+USER app
+
+EXPOSE 3000
+
+CMD ["yarn", "dev"]

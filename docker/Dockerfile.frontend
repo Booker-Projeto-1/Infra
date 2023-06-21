@@ -1,8 +1,11 @@
 FROM node:18-alpine
-RUN apk add --no-cache libc6-compat
-WORKDIR /usr/src/app
-COPY /booker-frontend/package*.json ./
+
+WORKDIR /app
+
+COPY ./booker-frontend .
+
 RUN yarn install
-COPY /booker-frontend .
-RUN yarn  build
+
 EXPOSE 3000
+
+CMD ["yarn", "dev"]
